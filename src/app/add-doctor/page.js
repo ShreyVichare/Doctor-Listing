@@ -21,7 +21,7 @@ const AddDoctor = () => {
     consultation_fee: "",
     city: "",
     hospital: "",
-    mode_of_consult: "", // Added modeOfConsult field
+    mode_of_consult: "", // Changed to match database field
   });
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -35,7 +35,6 @@ const AddDoctor = () => {
       return;
     }
 
-    // Validate file type (only images)
     const validImageTypes = ["image/jpeg", "image/png", "image/gif"];
     if (!validImageTypes.includes(file.type)) {
       setError("Please upload a valid image (JPEG, PNG, or GIF).");
@@ -98,7 +97,7 @@ const AddDoctor = () => {
     ) {
       return "Consultation fee must be a positive number.";
     }
-    if (!formData.modeOfConsult) {
+    if (!formData.mode_of_consult) {
       return "Mode of Consult is required.";
     }
     return null;
@@ -109,7 +108,6 @@ const AddDoctor = () => {
     setMessage("");
     setError("");
 
-    // Client-side validation
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
@@ -136,7 +134,7 @@ const AddDoctor = () => {
               : null,
             city: formData.city.trim() || null,
             hospital: formData.hospital.trim() || null,
-            mode_of_consult: formData.modeOfConsult, // Added modeOfConsult to insert
+            mode_of_consult: formData.mode_of_consult,
           },
         ])
         .select();
@@ -146,7 +144,6 @@ const AddDoctor = () => {
       }
 
       setMessage("Doctor added successfully!");
-      // Reset form
       setFormData({
         profileURL: "",
         name: "",
@@ -157,7 +154,7 @@ const AddDoctor = () => {
         consultation_fee: "",
         city: "",
         hospital: "",
-        modeOfConsult: "", // Reset modeOfConsult
+        mode_of_consult: "",
       });
       console.log("Inserted Doctor:", data);
     } catch (err) {
@@ -346,14 +343,14 @@ const AddDoctor = () => {
               </div>
               <div>
                 <label
-                  htmlFor="modeOfConsult"
+                  htmlFor="mode_of_consult"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Mode of Consult <span className="text-red-500">*</span>
                 </label>
                 <select
-                  id="modeOfConsult"
-                  name="modeOfConsult"
+                  id="mode_of_consult"
+                  name="mode_of_consult"
                   value={formData.mode_of_consult}
                   onChange={handleChange}
                   required

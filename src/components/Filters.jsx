@@ -1,44 +1,94 @@
 // src/components/Filters.js
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 
 export const Filters = ({
-  filters,
-  setFilters,
-  applyFilters,
+  filters = {
+    specialty: "",
+    mode_of_consult: "",
+    experience: "",
+    fees: "",
+    language: [],
+  },
+  setFilters = () => console.error("setFilters prop is missing"),
+  applyFilters = () => console.error("applyFilters prop is missing"),
   hideSpecialty = false,
 }) => {
-  const handleCheckboxChange = (e) => {
-    const { name, value, checked } = e.target;
-    if (name === "specialty" || name === "mode_of_consult") {
-      // For single-selection fields (specialty and modeOfConsult)
-      setFilters((prev) => ({
-        ...prev,
-        [name]: checked ? value : "", // If unchecked, clear the value
-      }));
-    } else {
-      // For multi-selection fields (experience, fees, language)
+  // Validate filters structure
+  useEffect(() => {
+    if (
+      typeof filters.mode_of_consult !== "string" ||
+      typeof filters.experience !== "string" ||
+      typeof filters.fees !== "string" ||
+      !Array.isArray(filters.language)
+    ) {
+      console.warn("Invalid filters structure, resetting to default");
+      setFilters({
+        specialty:
+          typeof filters.specialty === "string" ? filters.specialty : "",
+        mode_of_consult:
+          typeof filters.mode_of_consult === "string"
+            ? filters.mode_of_consult
+            : "",
+        experience:
+          typeof filters.experience === "string" ? filters.experience : "",
+        fees: typeof filters.fees === "string" ? filters.fees : "",
+        language: Array.isArray(filters.language) ? filters.language : [],
+      });
+    }
+  }, [filters, setFilters]);
+
+  // Log filter state changes
+  useEffect(() => {
+    console.log("Filters state:", filters);
+  }, [filters]);
+
+  const handleFilterChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    console.log(
+      `Input: name=${name}, value=${value}, type=${type}, checked=${checked}`
+    );
+
+    if (
+      name === "specialty" ||
+      name === "mode_of_consult" ||
+      name === "experience" ||
+      name === "fees"
+    ) {
       setFilters((prev) => {
-        const currentValues = prev[name] || [];
-        if (checked) {
-          return { ...prev, [name]: [...currentValues, value] };
-        } else {
-          return { ...prev, [name]: currentValues.filter((v) => v !== value) };
-        }
+        const newFilters = { ...prev, [name]: value };
+        console.log(`Set ${name} to:`, value);
+        return newFilters;
+      });
+    } else if (name === "language") {
+      setFilters((prev) => {
+        const currentValues = Array.isArray(prev.language) ? prev.language : [];
+        const newValues = checked
+          ? [...currentValues, value]
+          : currentValues.filter((v) => v !== value);
+        const newFilters = { ...prev, language: newValues };
+        console.log(`Set language to:`, newValues);
+        return newFilters;
       });
     }
   };
 
   const handleClearFilters = () => {
-    console.log("Clear ALL clicked, current filters:", filters);
-    setFilters({
-      specialty: hideSpecialty ? filters.specialty : "", // Preserve specialty if hidden
-      mode_of_consult: "", // Reset to empty string (single selection)
-      experience: [],
-      fees: [],
+    console.log("Clearing filters, current state:", filters);
+    const newFilters = {
+      specialty: hideSpecialty ? filters.specialty : "",
+      mode_of_consult: "",
+      experience: "",
+      fees: "",
       language: [],
-    });
-    console.log("Filters after clear:", filters);
+    };
+    setFilters(newFilters);
+    console.log("Filters cleared to:", newFilters);
+  };
+
+  const handleApplyFilters = () => {
+    console.log("Applying filters:", filters);
+    applyFilters();
   };
 
   return (
@@ -67,72 +117,26 @@ export const Filters = ({
         <div className="mb-6">
           <h3 className="text-sm font-medium text-gray-900 mb-3">Specialty</h3>
           <div className="space-y-2">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="specialty"
-                value=""
-                checked={filters.specialty === ""}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm">None</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="specialty"
-                value="General Physician"
-                checked={filters.specialty === "General Physician"}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm">General Physician</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="specialty"
-                value="Cardiologist"
-                checked={filters.specialty === "Cardiologist"}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm">Cardiologist</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="specialty"
-                value="Orthopedic Surgeon"
-                checked={filters.specialty === "Orthopedic Surgeon"}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm">Orthopedic Surgeon</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="specialty"
-                value="Pediatrician"
-                checked={filters.specialty === "Pediatrician"}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm">Pediatrician</span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                name="specialty"
-                value="Dermatologist"
-                checked={filters.specialty === "Dermatologist"}
-                onChange={handleCheckboxChange}
-                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm">Dermatologist</span>
-            </label>
+            {[
+              { value: "", label: "None" },
+              { value: "General Physician", label: "General Physician" },
+              { value: "Cardiologist", label: "Cardiologist" },
+              { value: "Orthopedic Surgeon", label: "Orthopedic Surgeon" },
+              { value: "Pediatrician", label: "Pediatrician" },
+              { value: "Dermatologist", label: "Dermatologist" },
+            ].map((option) => (
+              <label key={option.value} className="flex items-center">
+                <input
+                  type="radio"
+                  name="specialty"
+                  value={option.value}
+                  checked={filters.specialty === option.value}
+                  onChange={handleFilterChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm">{option.label}</span>
+              </label>
+            ))}
           </div>
         </div>
       )}
@@ -143,39 +147,23 @@ export const Filters = ({
           Mode of Consult
         </h3>
         <div className="space-y-2">
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="mode_of_consult"
-              value=""
-              checked={filters.mode_of_consult === ""}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">None</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="mode_of_consult"
-              value="Hospital Visit"
-              checked={filters.mode_of_consult === "Hospital Visit"}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">Hospital Visit</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="mode_of_consult"
-              value="Online Consult"
-              checked={filters.mode_of_consult === "Online Consult"}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">Online Consult</span>
-          </label>
+          {[
+            { value: "", label: "None" },
+            { value: "Hospital Visit", label: "Hospital Visit" },
+            { value: "Online Consult", label: "Online Consult" },
+          ].map((option) => (
+            <label key={option.value} className="flex items-center">
+              <input
+                type="radio"
+                name="mode_of_consult"
+                value={option.value}
+                checked={filters.mode_of_consult === option.value}
+                onChange={handleFilterChange}
+                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+              />
+              <span className="ml-2 text-sm">{option.label}</span>
+            </label>
+          ))}
         </div>
       </div>
 
@@ -185,50 +173,25 @@ export const Filters = ({
           Experience (in Years)
         </h3>
         <div className="space-y-2">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="experience"
-              value="0-5"
-              checked={filters.experience?.includes("0-5") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">0-5</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="experience"
-              value="6-10"
-              checked={filters.experience?.includes("6-10") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">6-10</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="experience"
-              value="11-16"
-              checked={filters.experience?.includes("11-16") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">11-16</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="experience"
-              value="16+"
-              checked={filters.experience?.includes("16+") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">+1 More</span>
-          </label>
+          {[
+            { value: "", label: "None" },
+            { value: "0-5", label: "0-5" },
+            { value: "6-10", label: "6-10" },
+            { value: "11-16", label: "11-16" },
+            { value: "16+", label: "+16 More" },
+          ].map((option) => (
+            <label key={option.value} className="flex items-center">
+              <input
+                type="radio"
+                name="experience"
+                value={option.value}
+                checked={filters.experience === option.value}
+                onChange={handleFilterChange}
+                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+              />
+              <span className="ml-2 text-sm">{option.label}</span>
+            </label>
+          ))}
         </div>
       </div>
 
@@ -238,39 +201,24 @@ export const Filters = ({
           Fees (in Rupees)
         </h3>
         <div className="space-y-2">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="fees"
-              value="100-500"
-              checked={filters.fees?.includes("100-500") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">100-500</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="fees"
-              value="500-1000"
-              checked={filters.fees?.includes("500-1000") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">500-1000</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="fees"
-              value="1000+"
-              checked={filters.fees?.includes("1000+") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">1000+</span>
-          </label>
+          {[
+            { value: "", label: "None" },
+            { value: "100-500", label: "100-500" },
+            { value: "500-1000", label: "500-1000" },
+            { value: "1000+", label: "1000+" },
+          ].map((option) => (
+            <label key={option.value} className="flex items-center">
+              <input
+                type="radio"
+                name="fees"
+                value={option.value}
+                checked={filters.fees === option.value}
+                onChange={handleFilterChange}
+                className="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+              />
+              <span className="ml-2 text-sm">{option.label}</span>
+            </label>
+          ))}
         </div>
       </div>
 
@@ -278,67 +226,27 @@ export const Filters = ({
       <div className="mb-6">
         <h3 className="text-sm font-medium text-gray-900 mb-3">Language</h3>
         <div className="space-y-2">
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="language"
-              value="English"
-              checked={filters.language?.includes("English") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">English</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="language"
-              value="Hindi"
-              checked={filters.language?.includes("Hindi") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">Hindi</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="language"
-              value="Tamil"
-              checked={filters.language?.includes("Tamil") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">Tamil</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="language"
-              value="Urdu"
-              checked={filters.language?.includes("Urdu") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">Urdu</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="checkbox"
-              name="language"
-              value="Gujarati"
-              checked={filters.language?.includes("Gujarati") || false}
-              onChange={handleCheckboxChange}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <span className="ml-2 text-sm">Gujarati</span>
-          </label>
+          {["English", "Hindi", "Marathi", "Tamil", "Urdu", "Gujarati"].map(
+            (value) => (
+              <label key={value} className="flex items-center">
+                <input
+                  type="checkbox"
+                  name="language"
+                  value={value}
+                  checked={filters.language?.includes(value) || false}
+                  onChange={handleFilterChange}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm">{value}</span>
+              </label>
+            )
+          )}
         </div>
       </div>
 
       {/* Apply Filters Button */}
       <button
-        onClick={applyFilters}
+        onClick={handleApplyFilters}
         className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition duration-150 ease-in-out"
       >
         Apply Filters

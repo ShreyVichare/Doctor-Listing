@@ -22,7 +22,10 @@ const DoctorsPage = () => {
   });
   const [filters, setFilters] = useState({
     specialty: "",
-    language: "",
+    mode_of_consult: "",
+    experience: "",
+    fees: "",
+    language: [],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -41,17 +44,79 @@ const DoctorsPage = () => {
         .select("*", { count: "exact" })
         .range(offset, offset + pageSize - 1);
 
+      // Apply filters
       if (filters.specialty) {
+        console.log("Applying specialty filter:", filters.specialty);
         query = query.ilike("specialty", `%${filters.specialty}%`);
       }
-      if (filters.language) {
-        query = query.ilike("language", `%${filters.language}%`);
+      if (filters.mode_of_consult) {
+        console.log(
+          "Applying mode_of_consult filter:",
+          filters.mode_of_consult
+        );
+        query = query.eq("mode_of_consult", filters.mode_of_consult);
+      }
+      if (filters.language.length > 0) {
+        console.log("Applying language filter:", filters.language);
+        query = query.or(
+          filters.language.map((lang) => `language.ilike.%${lang}%`).join(",")
+        );
+      }
+      if (filters.experience) {
+        console.log("Applying experience filter:", filters.experience);
+        try {
+          if (filters.experience === "16+") {
+            query = query.gte("experience", 16);
+          } else {
+            const [min, max] = filters.experience.split("-").map(Number);
+            if (isNaN(min) || isNaN(max)) {
+              throw new Error(
+                `Invalid experience range: ${filters.experience}`
+              );
+            }
+            query = query.gte("experience", min);
+            query = query.lte("experience", max);
+          }
+          query = query.not("experience", "is", null);
+        } catch (err) {
+          console.error("Experience filter error:", err.message);
+          setError(`Invalid experience filter: ${filters.experience}`);
+        }
+      }
+      if (filters.fees) {
+        console.log("Applying fees filter:", filters.fees);
+        try {
+          if (filters.fees === "1000+") {
+            query = query.gte("consultation_fee", 1000);
+          } else {
+            const [min, max] = filters.fees.split("-").map(Number);
+            if (isNaN(min) || isNaN(max)) {
+              throw new Error(`Invalid fees range: ${filters.fees}`);
+            }
+            query = query.gte("consultation_fee", min);
+            query = query.lte("consultation_fee", max);
+          }
+          query = query.not("consultation_fee", "is", null);
+        } catch (err) {
+          console.error("Fees filter error:", err.message);
+          setError(`Invalid fees filter: ${filters.fees}`);
+        }
       }
 
       const { data, error, count } = await query;
 
       if (error) {
         throw new Error(error.message || "Failed to fetch doctors");
+      }
+
+      console.log("Fetched doctors:", data, "Count:", count);
+
+      // Fallback: If no doctors are returned, log all doctors for debugging
+      if (data.length === 0) {
+        const { data: allDoctors } = await supabase
+          .from("doctors")
+          .select("id, name, experience, consultation_fee");
+        console.log("All doctors for debugging:", allDoctors);
       }
 
       const totalPages = Math.ceil(count / pageSize);
@@ -76,6 +141,7 @@ const DoctorsPage = () => {
   }, []);
 
   const applyFilters = () => {
+    console.log("Applying filters:", filters);
     fetchDoctors(1);
   };
 
@@ -93,9 +159,7 @@ const DoctorsPage = () => {
           List of Doctors
         </h1>
 
-        {/* Main Layout: Filters on Left, Doctor Cards in Middle */}
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Left Sidebar: Filters */}
           <div className="md:w-1/4">
             <div className="bg-white p-6 rounded-lg shadow-lg">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
@@ -109,16 +173,13 @@ const DoctorsPage = () => {
             </div>
           </div>
 
-          {/* Main Content: Doctor Cards */}
           <div className="md:w-3/4 flex flex-col items-center">
-            {/* Error Message */}
             {error && (
               <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-center border border-red-200 w-full max-w-4xl">
                 {error}
               </div>
             )}
 
-            {/* Doctor List */}
             {loading ? (
               <p className="text-center text-gray-600">Loading...</p>
             ) : doctors.length === 0 ? (
@@ -133,7 +194,6 @@ const DoctorsPage = () => {
                   </div>
                 </div>
 
-                {/* Pagination Controls */}
                 <div className="mt-8 flex justify-center items-center gap-4">
                   <button
                     onClick={() =>
